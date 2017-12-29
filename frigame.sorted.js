@@ -29,8 +29,8 @@
 
 	var
 		overrides = {},
-		sortedGroupMakers,
-		sortedBaseSpriteMethods
+		sortedBaseSpriteMethods,
+		sortedGroupMethods
 	;
 
 	// ******************************************************************** //
@@ -394,11 +394,7 @@
 
 	// Extend the Sprite Group object in order to support originx and originy
 
-	fg.extend(fg.PSpriteGroup, sortedBaseSpriteMethods);
-
-	fg.PSortedSpriteGroup = Object.create(fg.PSpriteGroup);
-	fg.extend(fg.PSortedSpriteGroup, sortedBaseSpriteMethods);
-	fg.extend(fg.PSortedSpriteGroup, {
+	sortedGroupMethods = {
 		init: function (name, options, parent) {
 			sortedBaseSpriteInit.apply(this, arguments);
 
@@ -407,14 +403,23 @@
 			fg.PSpriteGroup.init.apply(this, arguments);
 		},
 
-		// Public functions
-
 		move: function (options) {
 			fg.s[this.parent].needsSorting = true;
 
 			return fg.PSpriteGroup.move.apply(this, arguments);
-		},
+		}
+	};
 
+	fg.PUnsortedSpriteGroup = Object.create(fg.PSpriteGroup);
+	fg.extend(fg.PUnsortedSpriteGroup, sortedBaseSpriteMethods);
+	fg.extend(fg.PUnsortedSpriteGroup, sortedGroupMethods);
+
+	fg.UnsortedSpriteGroup = fg.Maker(fg.PUnsortedSpriteGroup);
+
+	fg.PSortedSpriteGroup = Object.create(fg.PSpriteGroup);
+	fg.extend(fg.PSortedSpriteGroup, sortedBaseSpriteMethods);
+	fg.extend(fg.PSortedSpriteGroup, sortedGroupMethods);
+	fg.extend(fg.PSortedSpriteGroup, {
 		addSprite: function (name, options) {
 			var
 				sprite = fg.SortedSprite(name, options, this.name)
@@ -441,13 +446,8 @@
 
 		addGroup: function (name, options) {
 			var
-				group = Object.create(fg.PSpriteGroup)
+				group = fg.UnsortedSpriteGroup(name, options, this.name)
 			;
-
-			group.init = this.init;
-			group.move = this.move;
-
-			group.init(name, options, this.name);
 
 			this.layers.push({name: name, obj: group});
 
@@ -458,13 +458,8 @@
 
 		insertGroup: function (name, options) {
 			var
-				group = Object.create(fg.PSpriteGroup)
+				group = fg.UnsortedSpriteGroup(name, options, this.name)
 			;
-
-			group.init = this.init;
-			group.move = this.move;
-
-			group.init(name, options, this.name);
 
 			this.layers.unshift({name: name, obj: group});
 
@@ -574,7 +569,7 @@
 	// ******************************************************************** //
 	// ******************************************************************** //
 
-	sortedGroupMakers = {
+	fg.extend(fg.PSpriteGroup, {
 		addSortedGroup: function (name, options) {
 			var
 				group = fg.SortedSpriteGroup(name, options, this.name)
@@ -598,10 +593,7 @@
 
 			return group;
 		}
-	};
-
-	fg.extend(fg.PSortedSpriteGroup, sortedGroupMakers);
-	fg.extend(fg.PSpriteGroup, sortedGroupMakers);
+	});
 
 	if (fg.fx) {
 		fg.extend(fg.fx.hooks, {
